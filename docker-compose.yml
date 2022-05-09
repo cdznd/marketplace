@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+
+  server:
+    image: nginx:alpine
+    container_name: app-nginx-server
+    tty: true
+    ports:
+      - '8015:80'
+    volumes:
+      - ./api:/var/www/
+      - ./server/:/etc/nginx/conf.d
+    networks:
+      - app-network
+  
+  database:
+    image: postgres
+    container_name: app-database
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: marketplace
+    volumes:
+      - ./database/init_db.sql:/docker-entrypoint-inidb.d/
+    networks:
+      - app-network
+
+  api:
+    build: 
+      dockerfile: Dockerfile
+      context: ./api
+      args:
+        user: marketplace
+        uid: 1000
+    container_name: app-api
+    tty: true
+    restart: unless-stopped
+    working_dir: /var/www/
+    expose:
+      - 9000
+    volumes:
+      - ./api:/var/www/
+    networks: 
+      - app-network
+  
+networks:
+  app-network:
+    driver: bridge
